@@ -5,10 +5,8 @@ import { useAuth } from "../../auth/AuthContext";
 import "./admin.css";
 
 /* ====== FIX: กัน VITE_API_BASE เขียนพลาดมี , หรือ / ท้าย ====== */
-const RAW = import.meta.env.VITE_API_BASE || "http://localhost:5000";
-const API = RAW.replace(/[,\s]+$/, "").replace(/\/+$/, "");
-// ใช้ `${API}/...` เสมอ
-
+const RAW_API  = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+const API_BASE = RAW_API.replace(/[,\s]+$/, "").replace(/\/+$/, "");
 
 /* ====== Resources ====== */
 const RESOURCE_MAP = { main: "main_dishes", snack: "snacks", drink: "drinks" };

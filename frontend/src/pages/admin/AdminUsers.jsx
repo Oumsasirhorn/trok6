@@ -4,10 +4,7 @@ import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import "./admin.css";
 
-const RAW = import.meta.env.VITE_API_BASE || "http://localhost:5000";
-const API = RAW.replace(/[,\s]+$/, "").replace(/\/+$/, "");
-// ใช้ `${API}/...` เสมอ
-
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
 const icon = (d) => (<svg viewBox="0 0 24 24" aria-hidden="true"><path d={d} /></svg>);
 function DashIcon() { return icon("M3 6h18M3 12h18M3 18h18"); }

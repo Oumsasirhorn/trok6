@@ -4,10 +4,7 @@ import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import "./admin.css";
 
-const RAW = import.meta.env.VITE_API_BASE || "http://localhost:5000";
-const API = RAW.replace(/[,\s]+$/, "").replace(/\/+$/, "");
-// ใช้ `${API}/...` เสมอ
-
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
 function NavItem({ icon: Icon, label, active, onClick }) {
   return (
