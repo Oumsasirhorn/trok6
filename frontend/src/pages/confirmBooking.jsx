@@ -1,7 +1,7 @@
 // src/pages/admin/AdminBookings.jsx
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
-import { useAuth } from "../../auth/AuthContext";
+
 import "./admin.css";
 
 /* ===== API base ===== */
