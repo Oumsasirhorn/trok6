@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 
-import "./admin.css";
+import "./confirmBooking.css";
 
 /* ===== API base ===== */
 const RAW = import.meta.env.VITE_API_BASE || "http://localhost:5000";
