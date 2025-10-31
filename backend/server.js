@@ -1,30 +1,44 @@
-// backend/server.js
+// server.js
 "use strict";
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
 const app = express();
+app.set("trust proxy", 1);
 
-/** ----- CORS ที่ตั้งค่าได้จาก ENV ----- */
-const ALLOW_ORIGINS = (process.env.CORS_ORIGIN || "")
+/** ----- CORS allowlist (จาก ENV + ค่าเริ่มต้น) ----- */
+const fromEnv = (process.env.CORS_ORIGIN || "")
   .split(",")
   .map(s => s.trim())
   .filter(Boolean);
-const corsOptions = {
-  origin(origin, cb) {
-    // ไม่มี origin (เช่น curl/health) = อนุญาต
-    if (!origin) return cb(null, true);
-    if (ALLOW_ORIGINS.length === 0) return cb(null, true); // ไม่ตั้งค่าไว้ = อนุญาตทั้งหมด
-    if (ALLOW_ORIGINS.includes(origin)) return cb(null, true);
-    return cb(null, false);
-  },
-  credentials: true,
-};
-app.use(cors(corsOptions));
+
+const ALLOWLIST = new Set([
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "https://trok6.vercel.app",
+  ...fromEnv,
+]);
+const ALLOW_RE = [/\.vercel\.app$/i]; // อนุญาตทุกซับโดเมน *.vercel.app
+
+app.use(
+  cors({
+    origin(origin, cb) {
+      if (!origin) return cb(null, true); // healthz/Postman
+      if (ALLOWLIST.has(origin)) return cb(null, true);
+      if (ALLOW_RE.some(rx => rx.test(origin))) return cb(null, true);
+      return cb(new Error(`Not allowed by CORS: ${origin}`));
+    },
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true, // เปิดไว้ ถ้าจะรับส่ง cookie
+  })
+);
+app.options("*", cors());
+
 app.use(express.json());
 
-/** ----- health check ต้องมาก่อนรวม routes ----- */
+/** ----- health check ----- */
 app.get("/healthz", (_req, res) => {
   res.status(200).json({
     ok: true,
@@ -35,12 +49,12 @@ app.get("/healthz", (_req, res) => {
   });
 });
 
-/** ----- root เพื่อลองยิงง่าย ๆ ----- */
+/** ----- root ----- */
 app.get("/", (_req, res) => {
   res.send("Restaurant API is running 🚀");
 });
 
-/** ----- รวมทุก routes ของระบบ ----- */
+/** ----- routes ----- */
 const routes = require("./routes/index");
 app.use("/", routes);
 
@@ -51,7 +65,7 @@ app.use((req, res, next) => {
 });
 
 app.use((err, _req, res, _next) => {
-  const msg = typeof err === "string" ? err : (err?.message || "Internal error");
+  const msg = typeof err === "string" ? err : err?.message || "Internal error";
   res.status(500).json({ error: "INTERNAL_ERROR", detail: msg });
 });
 
