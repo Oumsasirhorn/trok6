@@ -1,62 +1,89 @@
-// backend/server.js
+// server.js
 "use strict";
+
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
 const app = express();
 
-/** ----- CORS ที่ตั้งค่าได้จาก ENV ----- */
-const ALLOW_ORIGINS = (process.env.CORS_ORIGIN || "")
+/* =========================
+   CORS Allowlist (ยืดหยุ่น)
+   - เพิ่ม origin เพิ่มเติมผ่าน ENV: CORS_ORIGIN="https://foo.app,https://bar.app"
+   ========================= */
+const fromEnv = (process.env.CORS_ORIGIN || "")
   .split(",")
   .map(s => s.trim())
   .filter(Boolean);
-const corsOptions = {
-  origin(origin, cb) {
-    // ไม่มี origin (เช่น curl/health) = อนุญาต
-    if (!origin) return cb(null, true);
-    if (ALLOW_ORIGINS.length === 0) return cb(null, true); // ไม่ตั้งค่าไว้ = อนุญาตทั้งหมด
-    if (ALLOW_ORIGINS.includes(origin)) return cb(null, true);
-    return cb(null, false);
-  },
-  credentials: true,
-};
-app.use(cors(corsOptions));
-app.use(express.json());
 
-/** ----- health check ต้องมาก่อนรวม routes ----- */
-app.get("/healthz", (_req, res) => {
-  res.status(200).json({
-    ok: true,
-    env: process.env.NODE_ENV || "development",
-    uptime: process.uptime(),
-    port: Number(process.env.PORT || 5000),
-    time: new Date().toISOString(),
-  });
-});
+const ALLOWLIST = new Set([
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "https://trok6.vercel.app",
+  ...fromEnv,
+]);
 
-/** ----- root เพื่อลองยิงง่าย ๆ ----- */
-app.get("/", (_req, res) => {
-  res.send("Restaurant API is running 🚀");
-});
+app.use(
+  cors({
+    origin(origin, cb) {
+      // ไม่มี Origin (เช่น Postman / server-to-server) → อนุญาต
+      if (!origin) return cb(null, true);
 
-/** ----- รวมทุก routes ของระบบ ----- */
-const routes = require("./routes/index");
+      // อยู่ใน allowlist → อนุญาต
+      if (ALLOWLIST.has(origin)) return cb(null, true);
+
+      // อนุญาตโดเมนย่อยของ vercel.app ทั้งหมด (สะดวกตอน preview)
+      if (/\.vercel\.app$/.test(origin)) return cb(null, true);
+
+      // ไม่ผ่าน
+      return cb(new Error(`Not allowed by CORS: ${origin}`));
+    },
+    credentials: true,
+  })
+);
+
+// รองรับ preflight
+app.options("*", cors());
+
+// เพิ่มขนาด body เผื่อรูป/base64
+app.use(express.json({ limit: "20mb" }));
+app.use(express.urlencoded({ extended: true, limit: "20mb" }));
+
+// ให้เสิร์ฟไฟล์อัปโหลด ถ้ามีโฟลเดอร์ /uploads
+app.use("/uploads", express.static("uploads", { fallthrough: true }));
+
+/* =========================
+   Routes หลักของแอพ
+   ========================= */
+const routes = require("./routes");
 app.use("/", routes);
 
-/** ----- 404 + Error handler ----- */
+// Health check
+app.get("/healthz", (_req, res) => res.json({ ok: true }));
+
+// 404 JSON สำหรับเส้นทางที่ไม่พบ
 app.use((req, res, next) => {
-  if (res.headersSent) return next();
-  res.status(404).json({ error: "NOT_FOUND", path: req.originalUrl });
+  res.status(404).json({ error: "NOT_FOUND", path: req.path });
 });
 
-app.use((err, _req, res, _next) => {
-  const msg = typeof err === "string" ? err : (err?.message || "Internal error");
-  res.status(500).json({ error: "INTERNAL_ERROR", detail: msg });
+// Error handler (รวมเคส CORS)
+app.use((err, req, res, _next) => {
+  if (err?.message?.startsWith?.("Not allowed by CORS")) {
+    return res.status(403).json({
+      error: "CORS_BLOCKED",
+      origin: req.headers.origin || null,
+      message: err.message,
+    });
+  }
+  console.error("Unhandled error:", err);
+  res.status(500).json({ error: "INTERNAL_ERROR", message: err.message || String(err) });
 });
 
-/** ----- Start server ----- */
-const PORT = Number(process.env.PORT || 5000);
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`✅ Server running on :${PORT}`);
+/* =========================
+   Start
+   ========================= */
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`✅ Server running on http://localhost:${PORT}`);
+  console.log("   CORS allowlist:", Array.from(ALLOWLIST).join(", ") || "(empty)");
 });
