@@ -2,9 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import "./booking.css";
 
-const RAW = import.meta.env.VITE_API_BASE || "http://localhost:5000";
-const API = RAW.replace(/[,\s]+$/,'').replace(/\/+$/,'');
-
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 const ZONES = ["โซนในร้าน", "โซนนอกร้าน"];
 const INSIDE_MAX = 18;
 

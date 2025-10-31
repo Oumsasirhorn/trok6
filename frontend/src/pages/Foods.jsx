@@ -4,9 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import "./Foods.css";
 
 /* ========== Config & Utils ========== */
-const RAW = import.meta.env.VITE_API_BASE || "http://localhost:5000";
-const API = RAW.replace(/[,\s]+$/,'').replace(/\/+$/,'');
-
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 const FOODS_API = `${API_BASE}/main_dishes`;
 const cartKey = (table) => `fd_cart_${table || "unknown"}`;
 
