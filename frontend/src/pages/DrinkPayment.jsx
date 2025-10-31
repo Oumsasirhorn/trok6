@@ -3,7 +3,9 @@ import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useMemo, useEffect } from "react";
 import "./drinks.css";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const RAW = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+const API = RAW.replace(/[,\s]+$/,'').replace(/\/+$/,'');
+
 
 // key สำหรับ sessionStorage
 const cartKey = (table) => `dr_cart_${table || "unknown"}`;

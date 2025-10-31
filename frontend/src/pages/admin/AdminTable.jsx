@@ -4,7 +4,9 @@ import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import "./admin.css";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+const RAW = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+const API = RAW.replace(/[,\s]+$/,'').replace(/\/+$/,'');
+
 const ZONES = ["โซนในร้าน", "โซนนอกร้าน"];
 const INSIDE_MAX = 18;
 

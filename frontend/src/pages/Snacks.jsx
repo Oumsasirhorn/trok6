@@ -3,7 +3,9 @@ import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import "./Snacks.css";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+const RAW = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+const API = RAW.replace(/[,\s]+$/,'').replace(/\/+$/,'');
+
 const SNACKS_API = `${API_BASE}/snacks`;
 const PLACEHOLDER = "/images/snacks/placeholder.jpg";
 const cartKey = (table) => `sn_cart_${table || "unknown"}`;

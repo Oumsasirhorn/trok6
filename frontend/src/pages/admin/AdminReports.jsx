@@ -7,7 +7,9 @@ import "./admin.css";
 /* ================================
    Config
 ================================ */
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+const RAW = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+const API = RAW.replace(/[,\s]+$/,'').replace(/\/+$/,'');
+
 
 /* ================================
    Utils

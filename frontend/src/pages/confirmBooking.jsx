@@ -3,7 +3,9 @@ import { useEffect, useRef, useState } from "react";
 import "./confirmBooking.css";
 
 /* ===== Config ===== */
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+const RAW = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+const API = RAW.replace(/[,\s]+$/,'').replace(/\/+$/,'');
+
 const AFTER_SAVE_PATH = "/success";
 
 /* ===== QR (FRONT-END ONLY) */
