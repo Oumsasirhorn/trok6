@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 // ✅ ต้องมี
 
-import "./confirmBooking.css";                                  // ✅ ใช้สไตล์ของแอดมิน (อย่าอิมพอร์ต confirmBooking.css)
+import "./confirmbooking.css";                                  // ✅ ใช้สไตล์ของแอดมิน (อย่าอิมพอร์ต confirmBooking.css)
 
 const RAW = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 const API_BASE = RAW.replace(/[,\s]+$/,'').replace(/\/+$/,'');

@@ -32,12 +32,8 @@ export default function Drinks() {
   const navigate = useNavigate();
   const [sp] = useSearchParams();
 
-  // ✅ ใหม่: fallback จาก localStorage หากไม่มี ?table=
-  const qTable = sp.get("table")?.trim() || "";
-  const tableLabel = qTable || localStorage.getItem("active_table") || "";
-  useEffect(() => {
-    if (qTable) localStorage.setItem("active_table", qTable);
-  }, [qTable]);
+  // ใช้ table จาก query (ไม่บังคับต้องมี)
+  const tableLabel = sp.get("table")?.trim() || "";
 
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);
@@ -188,7 +184,6 @@ export default function Drinks() {
     const qs = tableLabel ? `?table=${encodeURIComponent(tableLabel)}` : "";
     navigate(`/drinks/confirm${qs}`, {
       state: {
-        table: tableLabel, // ✅ ส่งโต๊ะไปด้วยใน state
         items: selected.map((x) => ({
           ...x,
           drink_id: String(x.id),
@@ -259,7 +254,7 @@ export default function Drinks() {
                     <h3 className="fd-name" title={it.name}>{it.name}</h3>
                     <div className="fd-price">{price.toFixed(2)} ฿</div>
 
-                    {/* อุณหภูมิ */}
+                    {/* อุณหภูมิ — ใช้สไตล์เบา ๆ เพื่อเข้ากับธีม (ไม่มีใน Foods.css) */}
                     <div
                       style={{
                         display: "flex",

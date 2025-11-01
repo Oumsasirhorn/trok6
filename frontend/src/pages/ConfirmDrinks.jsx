@@ -18,31 +18,21 @@ export default function ConfirmDrinks() {
   const [sp] = useSearchParams();
   const location = useLocation();
 
-  // ✅ รวมแหล่งที่มาของ "โต๊ะ"
-  const qTable = sp.get("table")?.trim() || "";
-  const initTable =
-    (location.state?.table && String(location.state.table)) ||
-    qTable ||
-    localStorage.getItem("active_table") ||
-    "";
-  const [table, setTable] = useState(initTable);
-
-  // เก็บลง localStorage ถ้าได้จาก query/state
-  useEffect(() => {
-    if (initTable) localStorage.setItem("active_table", initTable);
-  }, [initTable]);
+  // ---- รับโต๊ะจาก QR (state หรือ query) ----
+  const tableFromQR = location.state?.table || sp.get("table") || "";
+  const [table, setTable] = useState(tableFromQR);
 
   // ---- items จาก session หรือ location state ----
   const itemsFromNav = Array.isArray(location.state?.items) ? location.state.items : [];
   const [items, setItems] = useState(() => {
     const seed = (() => {
       try {
-        const sel = sessionStorage.getItem(selectedKey(initTable));
+        const sel = sessionStorage.getItem(selectedKey(tableFromQR));
         if (sel) return JSON.parse(sel);
         if (itemsFromNav.length) return itemsFromNav;
-        const all = sessionStorage.getItem(cartKey(initTable));
+        const all = sessionStorage.getItem(cartKey(tableFromQR));
         if (all) return JSON.parse(all);
-      } catch {}
+      } catch { }
       return [];
     })();
 
@@ -60,7 +50,7 @@ export default function ConfirmDrinks() {
 
   /* ---------- Order note ---------- */
   const [orderNote, setOrderNote] = useState(() => {
-    try { return sessionStorage.getItem(ORDER_NOTE_KEY(initTable)) || ""; }
+    try { return sessionStorage.getItem(ORDER_NOTE_KEY(tableFromQR)) || ""; }
     catch { return ""; }
   });
 
@@ -70,9 +60,8 @@ export default function ConfirmDrinks() {
       if (table) {
         sessionStorage.setItem(cartKey(table), JSON.stringify(items));
         sessionStorage.setItem(ORDER_NOTE_KEY(table), orderNote);
-        sessionStorage.setItem(selectedKey(table), JSON.stringify(items.filter(it => toNum(it.qty) > 0)));
       }
-    } catch {}
+    } catch { }
   }, [items, orderNote, table]);
 
   /* ---------- Derived ---------- */
@@ -83,7 +72,7 @@ export default function ConfirmDrinks() {
   /* ---------- UI actions ---------- */
   const removeOne = (id) => setItems((list) => list.filter((x) => x.id !== id));
   const clearAll = () => setItems([]);
-  const [paymentMethod, setPaymentMethod] = useState("cash"); // ใช้ค่าภาษาอังกฤษให้ตรง backend
+  const [paymentMethod, setPaymentMethod] = useState("เงินสด");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   /* ---------- Confirm ---------- */
@@ -98,13 +87,15 @@ export default function ConfirmDrinks() {
     }
     setIsSubmitting(true);
 
-    // ถ้า table เป็นตัวเลขล้วน → ส่ง table_number ด้วย (สะดวก backend)
-    const isNumericTable = /^[0-9]+$/.test(String(table));
+    const method =
+      paymentMethod === "เงินสด" ? "cash" :
+        paymentMethod === "พร้อมเพย์" ? "promptpay" :
+          "cash";
 
     const body = {
-      table_number: isNumericTable ? Number(table) : null,
-      table_label: table, // ส่งเสมอ
-      payment_method: paymentMethod, // "cash" | "promptpay"
+      table_number: Number(table),
+      table_label: table,
+      payment_method: method,
       amount: selected.reduce((sum, it) => sum + (toNum(it.price) * toNum(it.qty)), 0),
       order_note: orderNote || "",
       items: selected.map((it) => ({
@@ -116,6 +107,7 @@ export default function ConfirmDrinks() {
         itemNote: asStr(it.note || ""),
       })),
     };
+
 
     try {
       const res = await fetch(`${API_BASE}/orders`, {
@@ -129,7 +121,7 @@ export default function ConfirmDrinks() {
       alert(`ส่งคำสั่งซื้อแล้ว ✅ (ออเดอร์ #${data.order_id})`);
       sessionStorage.removeItem(selectedKey(table));
       sessionStorage.removeItem(ORDER_NOTE_KEY(table));
-      navigate(`/drinks?table=${encodeURIComponent(table)}`, { replace: true });
+      navigate(`/drinks?table=${encodeURIComponent(table)}`);
     } catch (e) {
       console.error("ConfirmDrinks POST error:", e);
       alert("มีข้อผิดพลาดระหว่างส่งคำสั่งซื้อ: " + (e.message || e));
@@ -142,7 +134,7 @@ export default function ConfirmDrinks() {
   return (
     <div className="fd-page">
       <header className="fd-topbar">
-        <button type="button" className="fd-back" onClick={() => navigate(`/drinks?table=${encodeURIComponent(table || "")}`)}>‹</button>
+        <button type="button" className="fd-back" onClick={() => navigate("/drinks")}>‹</button>
         <div className="fd-title">
           <span>ตรวจสอบรายการ (เครื่องดื่ม)</span>
           <strong>โต๊ะ {table || "—"}</strong>
@@ -158,7 +150,7 @@ export default function ConfirmDrinks() {
               <button
                 type="button"
                 className="fd-bottomBtn"
-                onClick={() => navigate(`/drinks?table=${encodeURIComponent(table || "")}`)}
+                onClick={() => navigate("/drinks")}
                 style={{ width: 200 }}
               >
                 เลือกเครื่องดื่ม
@@ -185,13 +177,7 @@ export default function ConfirmDrinks() {
                     </div>
                     {it.note && <div className="fd-h-note">หมายเหตุ: {it.note}</div>}
                   </div>
-                  <button
-                    type="button"
-                    className="fd-circle fd-circle--sm fd-remove"
-                    onClick={() => { if (window.confirm("ลบรายการนี้?")) removeOne(it.id); }}
-                  >
-                    ✕
-                  </button>
+                  <button type="button" className="fd-circle fd-circle--sm fd-remove" onClick={() => { if (window.confirm("ลบรายการนี้?")) removeOne(it.id); }}>✕</button>
                 </li>
               ))}
             </ul>
@@ -210,22 +196,18 @@ export default function ConfirmDrinks() {
               <div className="fd-card fd-compactCard">
                 <label className="fd-fieldTitle">💳 วิธีชำระเงิน</label>
                 <select
-                  className="fd-select fd-select--sm"
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                >
-                  <option value="cash">🪙 เงินสด</option>
-                  <option value="promptpay">🏧 พร้อมเพย์</option>
-                </select>
+  className="fd-select fd-select--sm"
+  value={paymentMethod}
+  onChange={(e) => setPaymentMethod(e.target.value)}
+>
+  <option value="cash">🪙 เงินสด</option>
+  <option value="promptpay">🏧 พร้อมเพย์</option>
+</select>
+
+
 
                 <div className="fd-actionsRow">
-                  <button
-                    type="button"
-                    className="fd-circle fd-circle--sm"
-                    onClick={() => { if (window.confirm("ลบรายการทั้งหมด?")) clearAll(); }}
-                  >
-                    🗑️
-                  </button>
+                  <button type="button" className="fd-circle fd-circle--sm" onClick={() => { if (window.confirm("ลบรายการทั้งหมด?")) clearAll(); }}>🗑️</button>
                 </div>
               </div>
             </div>
