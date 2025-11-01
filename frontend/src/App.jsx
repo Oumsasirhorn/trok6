@@ -22,7 +22,7 @@ import AdminFoodMenu from "./pages/admin/AdminFoodMenu";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminReports from "./pages/admin/AdminReports";
 import AdminTable from "./pages/admin/AdminTable";
-import ScanEntry from "./pages/ScanEntry";
+
 import "./App.css";
 
 /* ================================
@@ -193,7 +193,7 @@ export default function App() {
         <Route path="/booking" element={<Booking />} />
         <Route path="/confirm" element={<ConfirmBooking />} />
         <Route path="/drinks" element={<Drinks />} />
-        <Route path="/scan" element={<ScanEntry />} />
+
         <Route path="/success" element={<Success />} />
         <Route path="/drinks/confirm" element={<ConfirmDrinks />} />
         <Route path="/drinks/payment" element={<DrinkPayment />} />
