@@ -1,14 +1,18 @@
+// src/pages/ConfirmBooking.jsx
 import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import "./confirmBooking.css";
-import { useAuth } from "../auth/AuthContext";
+
 /* ===== Config ===== */
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+// กันกรณี VITE_API_BASE เผลอใส่ , หรือ / ต่อท้าย
+const RAW_API  = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+const API_BASE = RAW_API.replace(/[,\s]+$/, "").replace(/\/+$/, "");
 const AFTER_SAVE_PATH = "/success";
 
 /* ===== QR (FRONT-END ONLY) */
 const STATIC_QR_URL =
-  import.meta.env.VITE_QR_SRC?.trim() || "/qr-payment.jpg";
+  (import.meta.env.VITE_QR_SRC?.trim() || "/qr-payment.jpg")
+    .replace(/[,\s]+$/, "");
 
 const STATIC_QR_META = {
   provider: import.meta.env.VITE_QR_PROVIDER || "promptpay",
@@ -23,13 +27,11 @@ function toLocalDateInputValue(date = new Date()) {
   const local = new Date(date.getTime() - off * 60 * 1000);
   return local.toISOString().slice(0, 10);
 }
-
 function toLocalTimeHHmm(date = new Date()) {
   const off = date.getTimezoneOffset();
   const local = new Date(date.getTime() - off * 60 * 1000);
   return local.toISOString().slice(11, 16);
 }
-
 function roundToNext30Min(d = new Date()) {
   const date = new Date(d);
   date.setSeconds(0, 0);
@@ -37,7 +39,6 @@ function roundToNext30Min(d = new Date()) {
   date.setMinutes(m % 30 === 0 ? m : m + (30 - (m % 30)));
   return date;
 }
-
 function guessMime(url = "") {
   const u = url.toLowerCase();
   if (u.endsWith(".jpg") || u.endsWith(".jpeg")) return "image/jpeg";
@@ -53,17 +54,14 @@ const ZONE_MAP_TO_TH = {
   "โซนในร้าน": "โซนในร้าน",
   "โซนนอกร้าน": "โซนนอกร้าน",
 };
-
-const ZONE_MAP_TO_DB = {
-  inside: "โซนในร้าน",
-  outside: "โซนนอกร้าน",
-};
+const ZONE_MAP_TO_DB = { inside: "โซนในร้าน", outside: "โซนนอกร้าน" };
 
 /* ===== Component ===== */
 export default function ConfirmBooking() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // รองรับการเปิด URL โดยตรง (ไม่มี location.state)
   const rawTableNo = location.state?.tableNo || "A1";
   const rawZone = location.state?.zone ?? "inside";
   const zoneDisplay = ZONE_MAP_TO_TH[rawZone] || "โซนในร้าน";
@@ -101,8 +99,10 @@ export default function ConfirmBooking() {
     }
   }, [form.slip]);
 
-  useEffect(() => () => {
-    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+  useEffect(() => {
+    return () => {
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    };
   }, []);
 
   const slipInputRef = useRef(null);
@@ -112,7 +112,11 @@ export default function ConfirmBooking() {
   /* ===== Payment QR ===== */
   const [qrLoading, setQrLoading] = useState(true);
   const [qrError, setQrError] = useState("");
-  const [qr, setQr] = useState({ src: "", mime: "image/jpeg", ...STATIC_QR_META });
+  const [qr, setQr] = useState({
+    src: "",
+    mime: "image/jpeg",
+    ...STATIC_QR_META,
+  });
 
   useEffect(() => {
     setQrLoading(true);
@@ -145,7 +149,12 @@ export default function ConfirmBooking() {
           return;
         }
         const okTypes = [
-          "image/png", "image/jpeg", "image/webp", "application/pdf", "image/heic", "image/heif",
+          "image/png",
+          "image/jpeg",
+          "image/webp",
+          "application/pdf",
+          "image/heic",
+          "image/heif",
         ];
         if (!okTypes.includes(file.type)) {
           setErrMsg("รองรับเฉพาะ PNG / JPG / WEBP / PDF / HEIC เท่านั้น");
@@ -188,9 +197,11 @@ export default function ConfirmBooking() {
       fd.append("time", form.time);
       fd.append("slip", form.slip);
 
-      const res = await fetch(`${API_BASE}/bookings`, { method: "POST", body: fd });
+      const res = await fetch(`${API_BASE}/bookings`, {
+        method: "POST",
+        body: fd,
+      });
       const data = await res.json().catch(() => ({}));
-
       if (!res.ok) throw new Error(data.error || `บันทึกล้มเหลว (HTTP ${res.status})`);
 
       const payload = {
@@ -205,7 +216,9 @@ export default function ConfirmBooking() {
 
       try {
         sessionStorage.setItem("last_booking", JSON.stringify(payload));
-      } catch { }
+      } catch {
+        /* ignore */
+      }
 
       navigate(AFTER_SAVE_PATH, { replace: true, state: payload });
     } catch (err) {
@@ -311,7 +324,6 @@ export default function ConfirmBooking() {
             </div>
           )}
         </div>
-
 
         {errMsg && <div className="form-error">{errMsg}</div>}
 
