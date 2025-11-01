@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import "./confirmBooking.css";
-
+import { useAuth } from "../auth/AuthContext";
 /* ===== Config ===== */
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 const AFTER_SAVE_PATH = "/success";
