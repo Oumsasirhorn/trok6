@@ -1,7 +1,7 @@
 // src/pages/ConfirmBooking.jsx
 import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
-import "./admin.css";
+import "./confirmBooking.css";
 
 /* ===== Config ===== */
 // กันกรณี VITE_API_BASE เผลอใส่ , หรือ / ต่อท้าย
