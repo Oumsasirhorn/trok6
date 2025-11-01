@@ -16,7 +16,7 @@ router.use("/bookings", require("./bookingsRoutes")); // 👈 เพิ่มไ
 router.use("/admins", require("./adminRoutes"));
 router.use("/metrics", require("./metricsRoutes"));
 
-router.use("/", require("./qrRoutes"));   // 👈 เพิ่มบรรทัดนี้
+router.use("/", require("./qrRoutes"));  // 👈 เพิ่มบรรทัดนี้
 const reportsRoutes = require('./reportsRoutes');
 router.use("/reports", reportsRoutes);
 

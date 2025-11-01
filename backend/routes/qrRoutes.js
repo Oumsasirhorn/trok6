@@ -3,6 +3,7 @@ const express = require("express");
 const router = express.Router();
 const QR = require("../controllers/qrAuthController");
 
+// ✅ ห้ามใส่ URL เต็ม เช่น https://... ตรงนี้
 router.get("/qr/:tableNumber.png", QR.generateSignedQR);
 router.get("/api/qr/validate", QR.validateAndCreateSession);
 router.post("/api/tables/release", QR.requireTableSession, QR.releaseTable);
