@@ -50,6 +50,46 @@ app.get("/", (_req, res) => {
   res.send("Restaurant API is running 🚀");
 });
 
+
+/* ===== DEBUG: บอกเส้นทางไหน register แล้วพัง ===== */
+(function patchExpressForPathDebug() {
+  const methods = ["use","get","post","put","patch","delete","options","head","all"];
+
+  // patch app.use เพื่อ log ตอน mount router ด้วย path
+  const _appUse = app.use.bind(app);
+  app.use = function (path, ...handlers) {
+    try {
+      console.log("[APP.USE] mount at:", path);
+      return _appUse(path, ...handlers);
+    } catch (e) {
+      console.error("[APP.USE FAIL] path =", path, "=>", e && e.message);
+      throw e;
+    }
+  };
+
+  // patch express.Router เพื่อ log ทุกครั้งที่ลงทะเบียน route
+  const _Router = express.Router;
+  express.Router = function (...args) {
+    const r = _Router.apply(this, args);
+    for (const m of methods) {
+      const orig = r[m].bind(r);
+      r[m] = function (path, ...rest) {
+        try {
+          // บางที express อนุญาตเรียก r.use(middleware) ที่ arg แรกไม่ใช่ path
+          if (typeof path === "string") {
+            console.log(`[ROUTER.${m.toUpperCase()}]`, path);
+          }
+          return orig(path, ...rest);
+        } catch (e) {
+          console.error(`[ROUTER.${m.toUpperCase()} FAIL]`, path, "=>", e && e.message);
+          throw e;
+        }
+      };
+    }
+    return r;
+  };
+})();
+
 /* ===== Routes ===== */
 const routes = require("./routes/index");
 app.use("/", routes);
