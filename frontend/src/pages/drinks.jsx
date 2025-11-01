@@ -32,14 +32,20 @@ export default function Drinks() {
   const navigate = useNavigate();
   const [sp] = useSearchParams();
 
-  // ใช้ table จาก query (ไม่บังคับต้องมี)
-  const tableLabel = sp.get("table")?.trim() || "";
+  // ✅ ไม่บังคับต้องมีโต๊ะ: เริ่มต้นว่างไว้ก่อน
+  // ถ้ามี ?table= จากการสแกน ค่อยบันทึกลง localStorage และใช้งาน
+  const qTable = sp.get("table")?.trim() || "";
+  const tableLabel = qTable || localStorage.getItem("active_table") || "";
+
+  useEffect(() => {
+    if (qTable) localStorage.setItem("active_table", qTable);
+  }, [qTable]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);
   const [items, setItems]     = useState([]);
 
-  // เก็บค่าโต๊ะก่อนหน้าไว้ตรวจการสแกนใหม่
+  // เก็บค่าโต๊ะก่อนหน้าไว้ตรวจการสแกนใหม่ เพื่อ "ย้าย" ตะกร้าจาก unknown → โต๊ะ
   const prevTableRef = useRef(tableLabel);
 
   /* ----- Load from API + merge sessionStorage ----- */
@@ -77,7 +83,7 @@ export default function Drinks() {
           };
         });
 
-        // merge cart per table
+        // merge cart ต่อโต๊ะ (ถ้ายังไม่มีโต๊ะ -> ใช้คีย์ unknown)
         const savedRaw = sessionStorage.getItem(cartKey(tableLabel));
         if (savedRaw) {
           let parsed = [];
@@ -181,9 +187,12 @@ export default function Drinks() {
       sessionStorage.setItem(cartKey(tableLabel), JSON.stringify(items));
     } catch {}
 
+    // ถ้ายังไม่รู้โต๊ะ → ไปยืนยันได้ แต่จะไม่มี ?table= (ให้ ConfirmDrinks ตรวจต่อ)
     const qs = tableLabel ? `?table=${encodeURIComponent(tableLabel)}` : "";
     navigate(`/drinks/confirm${qs}`, {
       state: {
+        // ส่งโต๊ะไปเฉพาะตอนมี
+        ...(tableLabel ? { table: tableLabel } : {}),
         items: selected.map((x) => ({
           ...x,
           drink_id: String(x.id),
@@ -201,6 +210,7 @@ export default function Drinks() {
         <button type="button" className="fd-back" onClick={() => navigate("/")} aria-label="ย้อนกลับ">‹</button>
         <div className="fd-title">
           <span>หมายเลขโต๊ะ</span>
+          {/* ยังไม่สแกน → แสดงขีด "—" ไว้ก่อน */}
           <strong>{tableLabel || "—"}</strong>
         </div>
         <button type="button" className="fd-cartBtn" onClick={goCart} aria-label="ไปตะกร้า">
@@ -254,7 +264,7 @@ export default function Drinks() {
                     <h3 className="fd-name" title={it.name}>{it.name}</h3>
                     <div className="fd-price">{price.toFixed(2)} ฿</div>
 
-                    {/* อุณหภูมิ — ใช้สไตล์เบา ๆ เพื่อเข้ากับธีม (ไม่มีใน Foods.css) */}
+                    {/* อุณหภูมิ */}
                     <div
                       style={{
                         display: "flex",
